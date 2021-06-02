@@ -14,6 +14,8 @@ import Tab1 from './pages/Tab1';
 import Tab2 from './pages/Tab2';
 import Tab3 from './pages/Tab3';
 
+import { Storage } from '@capacitor/storage'
+
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
 
@@ -32,8 +34,58 @@ import '@ionic/react/css/display.css';
 
 /* Theme variables */
 import './theme/variables.css';
+import { useState, useEffect } from 'react';
+import { func } from 'prop-types';
 
-const App: React.FC = () => (
+function useAuth() {
+  const [sessionFetched, setFetchedSession] = useState(false)
+  const [isAuth, setAuth] = useState<boolean>(false)
+  useEffect(() => {
+    Storage.get({key:'auth'}).then((response) => {
+      
+      setFetchedSession(true)
+      if (response.value) {
+        const v = JSON.parse(response.value)
+        setAuth(v)
+      }
+    }).catch(e => {
+      console.error(e)
+    })
+  }, [])
+
+  const login = async ()=> {
+    setAuth(true)
+    await Storage.set({key: "auth", value: JSON.stringify(true)})
+  }
+
+  return [sessionFetched, isAuth, login]
+}
+
+const AppWrapp: React.FC = () => {
+  
+  const [sessionFetched, isAuth, login] = useAuth()
+  
+  console.log('sessionFetched', sessionFetched)
+  if (!sessionFetched) {
+    console.log('Preloading')
+    return <div >preload </div>
+  }
+
+
+  if (!isAuth) {
+    return <div><button type="button" onClick={() => {login()} }>Log in</button></div>
+  }
+
+
+  return <div>
+    <App />
+  </div>
+}
+
+const App: React.FC = () => {
+
+  return (
+  
   <IonApp>
     <IonReactRouter>
       <IonTabs>
@@ -69,5 +121,5 @@ const App: React.FC = () => (
     </IonReactRouter>
   </IonApp>
 );
-
-export default App;
+}
+export default AppWrapp;
